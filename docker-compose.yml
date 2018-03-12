@@ -1,0 +1,80 @@
+version: '2'
+services:
+
+  base:
+    restart: unless-stopped
+    build: .
+    environment:
+      # Run `docker-compose run --rm web config generate-secret-key`
+      # to get the SENTRY_SECRET_KEY value.
+      # SENTRY_SECRET_KEY: ''
+      SENTRY_MEMCACHED_HOST: memcached
+      SENTRY_REDIS_HOST: redis
+      SENTRY_POSTGRES_HOST: postgres
+      SENTRY_EMAIL_HOST: smtp
+    volumes:
+      - sentry_data:/var/lib/sentry/files
+
+  smtp:
+    restart: unless-stopped
+    image: tianon/exim4
+
+  memcached:
+    restart: unless-stopped
+    image: memcached:1.4
+
+  redis:
+    restart: unless-stopped
+    image: redis:3.2-alpine
+
+  postgres:
+    restart: unless-stopped
+    image: postgres:9.5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    restart: unless-stopped
+    extends: base
+    depends_on:
+      - redis
+      - postgres
+      - memcached
+      - smtp
+
+  cron:
+    restart: unless-stopped
+    extends: base
+    command: run cron
+    depends_on:
+      - redis
+      - postgres
+      - memcached
+      - smtp
+
+  worker:
+    restart: unless-stopped
+    extends: base
+    command: run worker
+    depends_on:
+      - redis
+      - postgres
+      - memcached
+      - smtp
+
+  proxy:
+    restart: unless-stopped
+    image: nginx:1.12.2
+    ports:
+      - '80:80'
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/nginx.conf.tpl:/etc/nginx/nginx.conf.tpl:ro
+    environment:
+      SRV_NAME: sentry.example.local
+    command: /bin/bash -c "envsubst '$$SRV_NAME' < /etc/nginx/nginx.conf.tpl > /etc/nginx/nginx.conf && cat /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+
+volumes:
+  sentry_data:
+  postgres_data:
