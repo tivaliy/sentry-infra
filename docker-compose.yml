@@ -7,10 +7,12 @@ services:
     environment:
       # Run `docker-compose run --rm web config generate-secret-key`
       # to get the SENTRY_SECRET_KEY value.
-      # SENTRY_SECRET_KEY: ''
+      SENTRY_SECRET_KEY: 'dx&+fxq59h-k66-*luw9%y%(q!7e%#l#owc#k8%q2lh7b=2==3'
       SENTRY_MEMCACHED_HOST: memcached
       SENTRY_REDIS_HOST: redis
       SENTRY_POSTGRES_HOST: postgres
+      SENTRY_DB_USER: 'sentry_user'
+      SENTRY_DB_PASSWORD: 'sentry_password'
       SENTRY_EMAIL_HOST: smtp
     volumes:
       - sentry_data:/var/lib/sentry/files
@@ -30,6 +32,9 @@ services:
   postgres:
     restart: unless-stopped
     image: postgres:9.5
+    environment:
+      POSTGRES_USER: 'sentry_user'
+      POSTGRES_PASSWORD: 'sentry_password'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -77,4 +82,6 @@ services:
 
 volumes:
   sentry_data:
+    driver: local
   postgres_data:
+    driver: local

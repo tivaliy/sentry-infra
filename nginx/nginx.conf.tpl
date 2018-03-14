@@ -11,11 +11,6 @@ events {
 http {
 
     server {
-        listen    80;
-        return    301 https://$host$request_uri;
-    }
-
-    server {
         listen 80;
         server_name ${SRV_NAME};
 
